@@ -46,9 +46,10 @@ class Player:
 
 class ReprGameboard:
     R = 5
-    def __init__(self, root, board, p):
+    def __init__(self, root, board, p, gb):
         self.dir_key_l = False
         self.dir_key_r = False
+        self.gb = gb
         self.board = board
         self.p = p
         self.canvas = tk.Canvas(root, bg="white", height=len(self.board)*L, width=len(self.board[0])*L)
@@ -85,15 +86,15 @@ class ReprGameboard:
             self.dir_key_l = False
 
     # def step(self):
-    #     xold, yold = rgb.p.x, rgb.p.y
-    #     if rgb.dir_key_r:
-    #         rgb.b.turn_right()
-    #     if rgb.dir_key_l:
-    #         rgb.b.turn_left()
-    #     rgb.p.step()
-    #     rgb.move_player(xold, yold, rgb.p.x, rgb.p.y)
-    #     if not rgb.board.check_collision():
-    #         rgb.canvas.after(50, game_loop(rgb))
+    #     xold, yold = self.p.x, self.p.y
+    #     if self.dir_key_r:
+    #         self.p.turn_right()
+    #     if self.dir_key_l:
+    #         self.p.turn_left()
+    #     self.p.step()
+    #     self.move_player(xold, yold, self.p.x, self.p.y)
+    #     if not self.gb.check_collision():
+    #         self.canvas.after(50, self.step)
     #     else:
     #         print("Game over")
 
@@ -163,17 +164,16 @@ def get_distance(board, p):
     return distances
 
 
-def game_loop(rgb):
-    xold, yold = rgb.p.x, rgb.p.y
+def game_loop(rgb, b, p):
+    xold, yold = p.x, p.y
     if rgb.dir_key_r:
-        rgb.b.turn_right()
+        p.turn_right()
     if rgb.dir_key_l:
-        rgb.b.turn_left()
-    # rgb.p.step()
-    rgb.move_player(xold, yold, rgb.p.x, rgb.p.y)
-    # if not rgb.board.check_collision():
-    if True:
-        rgb.canvas.after(50, game_loop(rgb))
+        p.turn_left()
+    rgb.p.step()
+    rgb.move_player(xold, yold, p.x, p.y)
+    if not b.check_collision():
+        rgb.canvas.after(50, game_loop, rgb, b, p)
     else:
         print("Game over")
 
@@ -185,8 +185,8 @@ if __name__ == "__main__":
 
     root = tk.Tk()
     gb = Gameboard(board, True)
-    rgb = ReprGameboard(root, board, gb.p)
-    root.after(50, game_loop(rgb))
+    rgb = ReprGameboard(root, board, gb.p, gb)
+    root.after(50, game_loop, rgb, gb, gb.p)
     root.mainloop()
     save_player(gb.p, "test.csv")
 

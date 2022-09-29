@@ -59,6 +59,12 @@ class ReprGameboard:
         root.bind("<KeyPress>", self.cb_keydown)
         root.bind("<KeyRelease>", self.cb_keyup)
 
+    def draw_free_fields(self):
+        for i, row in enumerate(self.board):
+            for j, itm in enumerate(row):
+                if itm is True:
+                    self.draw_square(j*L, i*L, L, "white")
+
     def draw_square(self, x, y, l, color):
         self.canvas.create_rectangle(x, y, x+l, y+l, fill=color, outline="")
 
@@ -111,13 +117,8 @@ def save_player(p, fname):
 def replay(root, fname):
     with open("board.json", "r") as fid:
         board = json.loads(fid.read())
+    data = read_save(fname)
     rgb = ReprGameboard(root, board)
-    data = []
-    with open(fname, "r") as fid:
-        for ln in fid.read().split("\n"):
-            chunks = ln.split(",")
-            if len(chunks) == 2:
-                data.append((int(chunks[0]), int(chunks[1])))
     rgb.canvas.after(50, replay_step, rgb, data)
 
 
@@ -150,21 +151,59 @@ def game_loop(rgb, b, p):
         print("Game over")
 
 
+def read_save(fname):
+    data = []
+    with open(fname, "r") as fid:
+        for ln in fid.read().split("\n"):
+            chunks = ln.split(",")
+            if len(chunks) == 2:
+                data.append((int(chunks[0]), int(chunks[1])))
+    return data
+
+
+def read_and_pad_multiples(namelist):
+    datalist = [read_save(fname) for fname in namelist]
+    lens = [len(itm) for itm in datalist]
+    max_len = max(lens)
+    datalist = [itm + (max_len - len(itm)) * [itm[-1]]
+                for itm in datalist]
+    return datalist
+
+
+def replay_multiple(root, namelist):
+    with open("board.json", "r") as fid:
+        board = json.loads(fid.read())
+    data = [itm for itm in zip(*read_and_pad_multiples(namelist))]
+    rgb = ReprGameboard(root, board)
+    rgb.canvas.after(50, replay_multiple_step, rgb, data)
+
+
+def replay_multiple_step(rgb, data):
+    pos = data.pop(0)
+    rgb.draw_free_fields()
+    for p in pos:
+        rgb.draw_circle(p[0], p[1], "red")
+    if len(data):
+        rgb.canvas.after(50, replay_multiple_step, rgb, data)
+
 # if __name__ == "__main__":
 #     with open("board.json", "r") as fid:
 #         board = json.loads(fid.read())
-
-
 #     root = tk.Tk()
-
 #     p = Player(50, len(board)*L/2, 0.05, 1, True)
 #     gb = Gameboard(board)
 #     rgb = ReprGameboard(root, board)
 #     root.after(50, game_loop, rgb, gb, p)
 #     root.mainloop()
-#     save_player(p, "test.csv")
+#     save_player(p, "test2.csv")
+
+# if __name__ == "__main__":
+#     root = tk.Tk()
+#     replay(root, "test.csv")
+#     root.mainloop()
 
 if __name__ == "__main__":
     root = tk.Tk()
-    replay(root, "test.csv")
+    replay_multiple(root, ("test.csv", "test1.csv", "test2.csv"))
     root.mainloop()
+

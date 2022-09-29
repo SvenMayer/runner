@@ -46,15 +46,12 @@ class Player:
 
 class ReprGameboard:
     R = 5
-    def __init__(self, root, board, p, gb):
+    def __init__(self, root, board):
+        self.board = board
         self.dir_key_l = False
         self.dir_key_r = False
-        self.gb = gb
-        self.board = board
-        self.p = p
         self.canvas = tk.Canvas(root, bg="white", height=len(self.board)*L, width=len(self.board[0])*L)
         self.canvas.pack()
-        # self.canvas.after(50, self.step())
         for i, row in enumerate(self.board):
             for j, itm in enumerate(row):
                 if itm is False:
@@ -85,35 +82,14 @@ class ReprGameboard:
         elif event.keysym == "Left":
             self.dir_key_l = False
 
-    # def step(self):
-    #     xold, yold = self.p.x, self.p.y
-    #     if self.dir_key_r:
-    #         self.p.turn_right()
-    #     if self.dir_key_l:
-    #         self.p.turn_left()
-    #     self.p.step()
-    #     self.move_player(xold, yold, self.p.x, self.p.y)
-    #     if not self.gb.check_collision():
-    #         self.canvas.after(50, self.step)
-    #     else:
-    #         print("Game over")
-
 
 class Gameboard:
-    def __init__(self, board, record=False):
+    def __init__(self, board):
         self.board = board
-        self.p = Player(50, len(board)*L/2, 0.05, 1, record=record)
 
-    def turn_left(self):
-        self.p.turn_left()
-
-    def turn_right(self):
-        self.p.turn_right()
-
-    def check_collision(self):
-        x, y, r = self.p.x, self.p.y, R
-        x0, x1 = x - r, x + r
-        y0, y1 = y - r, y +r
+    def check_collision(self, x, y):
+        x0, x1 = x - R, x + R
+        y0, y1 = y - R, y + R
         idx_x0 = int(x0 // L)
         idx_x1 = int(x1 // L)
         idx_y0 = int(y0 // L)
@@ -123,10 +99,7 @@ class Gameboard:
         return not (self.board[idx_yc][idx_x0]
                     and self.board[idx_yc][idx_x1]
                     and self.board[idx_y0][idx_xc]
-                    and self.board[idx_y0][idx_xc])
-
-    def step(self):
-        self.p.step()
+                    and self.board[idx_y1][idx_xc])
 
 
 def save_player(p, fname):
@@ -138,22 +111,21 @@ def save_player(p, fname):
 def replay(root, fname):
     with open("board.json", "r") as fid:
         board = json.loads(fid.read())
-    gb = Gameboard(board, False)
-    rgb = ReprGameboard(root, gb)
+    rgb = ReprGameboard(root, board)
     data = []
     with open(fname, "r") as fid:
         for ln in fid.read().split("\n"):
             chunks = ln.split(",")
             if len(chunks) == 2:
                 data.append((int(chunks[0]), int(chunks[1])))
-    rgb.canvas.after(50, replay_step(rgb, data))
+    rgb.canvas.after(50, replay_step, rgb, data)
 
 
 def replay_step(rgb, data):
     xold, yold = data.pop(0)
     if len(data):
         rgb.move_player(xold, yold, data[0][0], data[0][1])
-        rgb.canvas.after(50, replay_step(rgb, data))
+        rgb.canvas.after(50, replay_step, rgb, data)
 
 
 def get_distance(board, p):
@@ -170,27 +142,29 @@ def game_loop(rgb, b, p):
         p.turn_right()
     if rgb.dir_key_l:
         p.turn_left()
-    rgb.p.step()
+    p.step()
     rgb.move_player(xold, yold, p.x, p.y)
-    if not b.check_collision():
+    if not b.check_collision(p.x, p.y):
         rgb.canvas.after(50, game_loop, rgb, b, p)
     else:
         print("Game over")
 
 
-if __name__ == "__main__":
-    with open("board.json", "r") as fid:
-        board = json.loads(fid.read())
-
-
-    root = tk.Tk()
-    gb = Gameboard(board, True)
-    rgb = ReprGameboard(root, board, gb.p, gb)
-    root.after(50, game_loop, rgb, gb, gb.p)
-    root.mainloop()
-    save_player(gb.p, "test.csv")
-
 # if __name__ == "__main__":
+#     with open("board.json", "r") as fid:
+#         board = json.loads(fid.read())
+
+
 #     root = tk.Tk()
-#     replay(root, "test.csv")
+
+#     p = Player(50, len(board)*L/2, 0.05, 1, True)
+#     gb = Gameboard(board)
+#     rgb = ReprGameboard(root, board)
+#     root.after(50, game_loop, rgb, gb, p)
 #     root.mainloop()
+#     save_player(p, "test.csv")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    replay(root, "test.csv")
+    root.mainloop()

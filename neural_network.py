@@ -8,21 +8,21 @@ Created on Sat Sep 24 20:34:10 2022
 import numpy as np
 
 
-RANGE = 300.
+RANGE = 1.
 
 
 class NeuralNetwork:
     def __init__(self, seed):
         np.random.seed(seed)
         self.weights = [
-            np.eye(5) * self.random(5),
+            # np.eye(5),
             self.random(20).reshape(5, 4),
             self.random(4).reshape(4, 1)
             ]
         self.biases = [
-            np.random.random(5).reshape(1, 5) * RANGE,
-            np.random.random(4).reshape(1, 4) * RANGE,
-            np.random.random(1).reshape(1, 1) * RANGE
+            # np.zeros(5).reshape(1, 5),
+            (2 * np.random.random(4).reshape(1, 4) - 1) * RANGE,
+            (2 * np.random.random(1).reshape(1, 1) - 1) * RANGE
             ]
 
     @staticmethod
@@ -35,14 +35,22 @@ class NeuralNetwork:
         return 1 / (1 + np.exp(-x))
 
     def calculate(self, o):
-        for i in range(3):
-            o = self._sigmoid(np.dot(o, self.weights[i]) + self.biases[i])
+        # import pdb;pdb.set_trace()
+        for i in range(2):
+            internals = np.dot(o, self.weights[i]) + self.biases[i]
+            o = self._sigmoid(internals)
         return o
 
+    # def get_internal(self):
+    #     data = np.r_[np.dot(np.ones(5), self.weights[0]), self.weights[1].T.reshape(20),
+    #                   self.weights[2].reshape(4), self.biases[0].reshape(5),
+    #                   self.biases[1].reshape(4), self.biases[2].reshape(1)]
+    #     return data
+
     def get_internal(self):
-        data = np.r_[np.dot(np.ones(5), self.weights[0]), self.weights[1].T.reshape(20),
-                     self.weights[2].reshape(4), self.biases[0].reshape(5),
-                     self.biases[1].reshape(4), self.biases[2].reshape(1)]
+        data = np.r_[self.weights[0].T.reshape(20),
+                      self.weights[1].reshape(4),
+                      self.biases[0].reshape(4), self.biases[1].reshape(1)]
         return data
 
     def set_internal(self, data):

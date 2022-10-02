@@ -13,13 +13,15 @@ import neural_network
 
 
 def play_game(gb, p, n):
+    ctr = 0
     while not gb.check_collision(p.x, p.y):
-        output = n.calculate(play.get_player_distances(gb, p))
+        output = n.calculate(play.get_player_distances(gb, p) / play.L)
         if output > 0.5:
             p.turn_right()
         else:
             p.turn_left()
         p.step()
+        ctr += 1
 
 
 if __name__ == "__main__":

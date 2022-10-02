@@ -218,7 +218,7 @@ def replay_multiple_step(rgb, data):
 
 
 def get_player_distances(b, p):
-    res = [b.get_distance(p.x, p.y, p.angle + i * np.pi/4 - np.pi/2) for i in range(5)]
+    res = np.array([b.get_distance(p.x, p.y, p.angle + i * np.pi/4 - np.pi/2) for i in range(5)])
     return res
 
 

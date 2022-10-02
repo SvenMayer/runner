@@ -34,4 +34,3 @@ def select_process(p):
         if itm[0] >= rand:
             return itm[1]
 
-

@@ -8,23 +8,26 @@ Created on Sat Sep 24 20:34:10 2022
 import numpy as np
 
 
+RANGE = 300.
+
+
 class NeuralNetwork:
     def __init__(self, seed):
-        np.random.seed(1)
+        np.random.seed(seed)
         self.weights = [
             np.eye(5) * self.random(5),
             self.random(20).reshape(5, 4),
             self.random(4).reshape(4, 1)
             ]
         self.biases = [
-            np.random.random(5).reshape(1, 5),
-            np.random.random(4).reshape(1, 4),
-            np.random.random(1).reshape(1, 1)
+            np.random.random(5).reshape(1, 5) * RANGE,
+            np.random.random(4).reshape(1, 4) * RANGE,
+            np.random.random(1).reshape(1, 1) * RANGE
             ]
 
     @staticmethod
     def random(size):
-        data = 2. * np.random.random(size) - 1.
+        data = (2. * np.random.random(size) - 1.) * RANGE
         return data
 
     @staticmethod

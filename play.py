@@ -107,6 +107,44 @@ class Gameboard:
                     and self.board[idx_y0][idx_xc]
                     and self.board[idx_y1][idx_xc])
 
+    def get_distance(self, x, y, phi):
+        dx = np.cos(phi)
+        dy = np.sin(phi)
+        idx_x = int(x // L)
+        idx_y = int(y // L)
+        if self.board[idx_y][idx_x] is False:
+            return 0.0
+        if dx > 0.:
+            xV = (idx_x + 1) * L
+            next_tile_offsetx = 1e-10
+        else:
+            xV = idx_x * L
+            next_tile_offsetx = -1e-10
+        if dy > 0.:
+            yH = idx_y * L
+            next_tile_offsety = -1e-10
+        else:
+            yH = (idx_y + 1) * L
+            next_tile_offsety = 1e-10
+        if np.abs(dx) > 1e-10:
+            m = dy / dx
+        else:
+            m = 1e50
+        yV = y - m * (xV - x)
+        if np.abs(m) > 1e-10:
+            xH = x + (yH - y) / m
+        else:
+            xH = 1e10
+        LsqV = (yV - y)**2. + (xV - x)**2.
+        LsqH = (yH - y)**2. + (xH - x)**2.
+        if LsqH < LsqV:
+            xnew, ynew = xH, yH + next_tile_offsety
+            L_ = LsqH
+        else:
+            xnew, ynew = xV + next_tile_offsetx, yV
+            L_ = LsqV
+        return np.sqrt(L_) + self.get_distance(xnew, ynew, phi)
+
 
 def save_player(p, fname):
     with open(fname, "w") as fid:
@@ -127,14 +165,6 @@ def replay_step(rgb, data):
     if len(data):
         rgb.move_player(xold, yold, data[0][0], data[0][1])
         rgb.canvas.after(50, replay_step, rgb, data)
-
-
-def get_distance(board, p):
-    x, y, alph = p.x, p.y, p.angle
-    distances = []
-    for offset in (np.pi/2, np.pi/4, 0, -np.pi/4, -np.pi/2):
-        distances.append(get_distance_on_board(x, y, alph+offset))
-    return distances
 
 
 def game_loop(rgb, b, p):
@@ -186,24 +216,41 @@ def replay_multiple_step(rgb, data):
     if len(data):
         rgb.canvas.after(50, replay_multiple_step, rgb, data)
 
+
+def get_player_distances(b, p):
+    res = [b.get_distance(p.x, p.y, p.angle + i * np.pi/4 - np.pi/2) for i in range(5)]
+    return res
+
+
+if __name__ == "__main__":
+    with open("board.json", "r") as fid:
+        board = json.loads(fid.read())
+    root = tk.Tk()
+    p = Player(50, len(board)*L/2, 0.05, 1, True)
+    gb = Gameboard(board)
+    rgb = ReprGameboard(root, board)
+    root.after(50, game_loop, rgb, gb, p)
+    root.mainloop()
+    save_player(p, "test2.csv")
+
+# if __name__ == "__main__":
+#     root = tk.Tk()
+#     replay(root, "auto_play.csv")
+#     root.mainloop()
+
+# if __name__ == "__main__":
+#     root = tk.Tk()
+#     replay_multiple(root, ("test.csv", "test1.csv", "test2.csv"))
+#     root.mainloop()
+
 # if __name__ == "__main__":
 #     with open("board.json", "r") as fid:
 #         board = json.loads(fid.read())
-#     root = tk.Tk()
 #     p = Player(50, len(board)*L/2, 0.05, 1, True)
+#     # p.angle = np.pi*1/4.
 #     gb = Gameboard(board)
-#     rgb = ReprGameboard(root, board)
-#     root.after(50, game_loop, rgb, gb, p)
-#     root.mainloop()
-#     save_player(p, "test2.csv")
-
-# if __name__ == "__main__":
+#     print(get_distances(gb, p))
 #     root = tk.Tk()
-#     replay(root, "test.csv")
+#     rgb = ReprGameboard(root, board)
+#     rgb.draw_circle(p.x, p.y, "red")
 #     root.mainloop()
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    replay_multiple(root, ("test.csv", "test1.csv", "test2.csv"))
-    root.mainloop()
-

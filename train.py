@@ -12,11 +12,12 @@ import tkinter as tk
 
 import play
 import neural_network
+import genetic_alg
 
 
 def play_game(gb, p, n):
     ctr = 0
-    while not gb.check_collision(p.x, p.y):
+    while not gb.check_collision(p.x, p.y) and p.nlaps < 2:
         output = n.calculate(play.get_player_distances(gb, p) / play.L)
         if output > 0.5:
             p.turn_right()
@@ -24,6 +25,7 @@ def play_game(gb, p, n):
             p.turn_left()
         p.step()
         ctr += 1
+    return ctr
 
 
 def play_set(board, n_, training_loop=0):
@@ -45,6 +47,30 @@ def get_random_networks(n):
 def get_replay_names(training_loop):
     suffix = "_day{:d}.csv".format(training_loop)
     return [itm for itm in os.listdir(".") if itm.endswith(suffix)]
+
+
+def improve_networks(n_):
+    res = []
+    for i in range(46):
+        p1 = genetic_alg.select_process(n_)
+        p2 = genetic_alg.select_process(n_)
+        internal_new = genetic_alg.crossover(p1.get_internal(), p2.get_internal())
+        n_new = neural_network.NeuralNetwork()
+        n_new.set_internal(internal_new)
+        res.append(n_new)
+    for i in range(4):
+        res.append(neural_network.NeuralNetwork())
+    return res
+
+
+def train(board, ndays):
+    n_ = get_random_networks(50)
+    res = play_set(board, n_, 0)
+    for day_ in range(1, ndays):
+        print("day {:d}".format(day_))
+        n_ = improve_networks(res)
+        res = play_set(board, n_, day_)
+    return n_
 
 
 # if __name__ == "__main__":
@@ -69,11 +95,9 @@ def get_replay_names(training_loop):
 if __name__ == "__main__":
     with open("board.json", "r") as fid:
         board = json.loads(fid.read())
-    n_ = get_random_networks(50)
-    play_set(board, n_)
 
-    fnames = get_replay_names(0)
+    n_ = train(board, 3)
+    fnames = get_replay_names(2)
     root = tk.Tk()
     play.replay_multiple(root, fnames)
     root.mainloop()
-

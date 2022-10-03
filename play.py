@@ -21,6 +21,8 @@ class Player:
         self.y = y
         self.dx = 0
         self.dy = 1
+        self.nlaps = 0
+        self.starty = y
         self.drot = drot
         self.velo = velo
         self.angle = np.pi/2
@@ -30,8 +32,11 @@ class Player:
             self.recorded_data.append((x, y))
 
     def step(self):
+        yold = self.y
         self.y -= self.dy
         self.x += self.dx
+        if yold > self.starty and self.y <= self.starty:
+            self.nlaps += 1
         if self.record:
             self.recorded_data.append((self.x, self.y))
 

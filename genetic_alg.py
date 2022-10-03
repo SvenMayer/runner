@@ -23,12 +23,14 @@ def crossover(p1, p2):
 
 
 def select_process(p):
-    cum_fitness = 0
+    cum_fitness = 0.
     for itm in p:
         cum_fitness += itm[0]
     pcum = []
+    lastcum = 0.
     for itm in p:
-        pcum.append((itm[0] / cum_fitness, itm[1]))
+        pcum.append((lastcum + itm[0] / cum_fitness, itm[1]))
+        lastcum = pcum[-1][0]
     rand = np.random.random()
     for itm in pcum:
         if itm[0] >= rand:

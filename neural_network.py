@@ -12,8 +12,9 @@ RANGE = 1.
 
 
 class NeuralNetwork:
-    def __init__(self, seed):
-        np.random.seed(seed)
+    def __init__(self, seed=None):
+        if seed is not None:
+            np.random.seed(seed)
         self.weights = [
             # np.eye(5),
             self.random(20).reshape(5, 4),
@@ -55,14 +56,12 @@ class NeuralNetwork:
 
     def set_internal(self, data):
         self.weights = [
-            np.eye(5) * data[:5],
-            data[5:25].reshape(4, 5).T,
-            data[25:29].reshape(4, 1)
+            data[:20].reshape(4, 5).T,
+            data[20:24].reshape(4, 1)
             ]
         self.biases = [
-            data[29:34].reshape(1, 5),
-            data[34:38].reshape(1, 4),
-            data[38].reshape(1, 1)
+            data[24:28].reshape(1, 4),
+            data[28].reshape(1, 1)
             ]
 
 

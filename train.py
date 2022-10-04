@@ -5,8 +5,9 @@ Created on Sat Oct  1 11:29:55 2022
 
 @author: sven
 """
-import os
+import multiprocessing as mp
 
+import numpy as np
 import json
 import tkinter as tk
 
@@ -15,7 +16,9 @@ import neural_network
 import genetic_alg
 
 
-def play_game(gb, p, n):
+def play_game(board, n, savename=None):
+    p = play.Player(50, len(board)*play.L/2-30, 0.05, 1, True)
+    gb = play.Gameboard(board)
     ctr = 0
     while not gb.check_collision(p.x, p.y) and p.nlaps < 2:
         output = n.calculate(play.get_player_distances(gb, p) / play.L)
@@ -25,28 +28,26 @@ def play_game(gb, p, n):
             p.turn_left()
         p.step()
         ctr += 1
-    return ctr
+    if savename is not None:
+        play.save_player(p, savename)
+    return ctr, n
 
 
 def play_set(board, n_, training_loop=0):
     res = []
-    for i, n in enumerate(n_):
-        p = play.Player(50, len(board)*play.L/2-30, 0.05, 1, True)
-        gb = play.Gameboard(board)
-        ctr = play_game(gb, p, n)
-        fname = "auto_play{:d}_day{:d}.csv".format(i, training_loop)
-        play.save_player(p, fname)
-        res.append((ctr, n))
+    pool = mp.Pool(mp.cpu_count())
+    res = pool.starmap_async(play_game, [(board, n, "auto_play{:d}_day{:d}.csv".format(i, training_loop)) for i, n in enumerate(n_)])
+    # for i, n in enumerate(n_):
+    #     ctr = play_game(board, n, "auto_play{:d}_day{:d}.csv".format(i, training_loop))
+    #     res.append(ctr)
+    res = res.get()
+    pool.close()
     return res
 
 
 def get_random_networks(n):
     return [neural_network.NeuralNetwork(i) for i in range(n)]
 
-
-def get_replay_names(training_loop):
-    suffix = "_day{:d}.csv".format(training_loop)
-    return [itm for itm in os.listdir(".") if itm.endswith(suffix)]
 
 
 def improve_networks(n_):
@@ -80,11 +81,8 @@ def train(board, ndays):
 #     for i in range(50):
 #         n = neural_network.NeuralNetwork(i)
 #         print(n.get_internal())
-#         p = play.Player(50, len(board)*play.L/2-30, 0.05, 1, True)
-#         gb = play.Gameboard(board)
-#         play_game(gb, p, n)
 #         fnames.append("auto_play{:d}.csv".format(i))
-#         play.save_player(p, fnames[-1])
+#         play_game(board, n, fnames[-1])
 
 #     root = tk.Tk()
 #     # rgb = play.ReprGameboard(root, board)
@@ -96,8 +94,10 @@ if __name__ == "__main__":
     with open("board.json", "r") as fid:
         board = json.loads(fid.read())
 
-    n_ = train(board, 3)
-    fnames = get_replay_names(2)
+    n_ = train(board, 20)
+    output = np.array([itm.get_internal() for itm in n_])
+    np.savetxt("networs.csv", output)
+    fnames = play.get_replay_names(19)
     root = tk.Tk()
     play.replay_multiple(root, fnames)
     root.mainloop()

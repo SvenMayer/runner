@@ -5,6 +5,7 @@ Created on Sat Sep 24 14:03:52 2022
 
 @author: sven
 """
+import os
 import json
 import numpy as np
 
@@ -205,21 +206,28 @@ def read_and_pad_multiples(namelist):
     return datalist
 
 
-def replay_multiple(root, namelist):
+def replay_multiple(root, namelist, savecb=None):
     with open("board.json", "r") as fid:
         board = json.loads(fid.read())
     data = [itm for itm in zip(*read_and_pad_multiples(namelist))]
     rgb = ReprGameboard(root, board)
-    rgb.canvas.after(50, replay_multiple_step, rgb, data)
+    rgb.canvas.after(50, replay_multiple_step, rgb, data, savecb, 0)
 
 
-def replay_multiple_step(rgb, data):
+def replay_multiple_step(rgb, data, savecb=None, idx=0):
     pos = data.pop(0)
     rgb.draw_free_fields()
     for p in pos:
         rgb.draw_circle(p[0], p[1], "red")
+    if savecb is not None:
+        savecb(rgb.canvas, idx)
     if len(data):
-        rgb.canvas.after(50, replay_multiple_step, rgb, data)
+        rgb.canvas.after(50, replay_multiple_step, rgb, data, savecb, idx+1)
+
+
+def get_replay_names(training_loop):
+    suffix = "_day{:d}.csv".format(training_loop)
+    return [itm for itm in os.listdir(".") if itm.endswith(suffix)]
 
 
 def get_player_distances(b, p):
